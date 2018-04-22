@@ -35,10 +35,7 @@ fn main() {
 
     let term = match matches.free.first() {
         Some(free) => free,
-        None => {
-            usage(&opts);
-            exit(1);
-        }
+        None => exit(0),
     };
 
     let limit: Option<usize> = matches.opt_str("l").and_then(|max| max.parse().ok());
