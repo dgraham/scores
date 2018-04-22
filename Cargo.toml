@@ -1,0 +1,7 @@
+[package]
+name = "scores"
+version = "0.1.0"
+authors = ["David Graham <david.malcom.graham@gmail.com>"]
+
+[dependencies]
+getopts = "0.2.17"
