@@ -1,10 +1,12 @@
 extern crate getopts;
+extern crate scores;
 
 use std::env;
 use std::io::{self, BufRead};
 use std::process::exit;
 
 use getopts::Options;
+use scores::dice;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -69,10 +71,7 @@ fn search(term: &str, limit: Option<usize>) {
 }
 
 fn score(line: &str, term: &str) -> u32 {
-    match line.contains(term) {
-        true => 1,
-        false => 0,
-    }
+    (dice(line, term) * 10000.0) as u32
 }
 
 fn usage(opts: &Options) {
