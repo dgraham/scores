@@ -68,6 +68,9 @@ fn search(term: &str, limit: Option<usize>) {
 }
 
 fn score(line: &str, term: &str) -> u32 {
+    if term.len() > line.len() {
+        return 0;
+    }
     (dice(line, term) * 10000.0) as u32
 }
 
