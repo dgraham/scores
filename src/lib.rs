@@ -1,4 +1,24 @@
-pub fn dice(a: &str, b: &str) -> f32 {
+pub fn score(line: &str, term: &str) -> u32 {
+    if term.len() > line.len() {
+        return 0;
+    }
+
+    let similarity = dice(line, term);
+    let total = if similarity == 0.0 {
+        0.0
+    } else if similarity == 1.0 {
+        1.0 * 2.0
+    } else {
+        similarity + bonus(prefix(line, term, 5)) + bonus(suffix(line, term, 5))
+    };
+
+    (total * 10000.0) as u32
+}
+
+// Returns a string similarity score between 0.0 and 1.0.
+//
+// https://en.wikipedia.org/wiki/Sørensen–Dice_coefficient
+fn dice(a: &str, b: &str) -> f32 {
     if a == b {
         return 1.0;
     }
@@ -40,6 +60,39 @@ fn bigrams(text: &str) -> Vec<u64> {
         .windows(2)
         .map(|bi| ((bi[0] as u64) << 32) | bi[1] as u64)
         .collect()
+}
+
+fn prefix(a: &str, b: &str, limit: usize) -> usize {
+    let stop = a.chars()
+        .zip(b.chars())
+        .enumerate()
+        .take(limit)
+        .find(|&(_, (x, y))| x != y);
+    match stop {
+        Some((ix, _)) => ix,
+        None => limit,
+    }
+}
+
+fn suffix(a: &str, b: &str, limit: usize) -> usize {
+    let stop = a.chars()
+        .rev()
+        .zip(b.chars().rev())
+        .enumerate()
+        .take(limit)
+        .find(|&(_, (x, y))| x != y);
+    match stop {
+        Some((ix, _)) => ix,
+        None => limit,
+    }
+}
+
+fn bonus(shared: usize) -> f32 {
+    match shared {
+        0 => 0.0,
+        len if len >= 2 => 0.2,
+        _ => 0.05,
+    }
 }
 
 #[cfg(test)]

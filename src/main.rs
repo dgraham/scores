@@ -6,7 +6,7 @@ use std::io::{self, BufRead};
 use std::process::exit;
 
 use getopts::Options;
-use scores::dice;
+use scores::score;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -65,13 +65,6 @@ fn search(term: &str, limit: Option<usize>) {
     for &(ref text, _) in top {
         println!("{}", text);
     }
-}
-
-fn score(line: &str, term: &str) -> u32 {
-    if term.len() > line.len() {
-        return 0;
-    }
-    (dice(line, term) * 10000.0) as u32
 }
 
 fn usage(opts: &Options) {
