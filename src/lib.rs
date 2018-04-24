@@ -73,3 +73,46 @@ fn bonus(shared: usize) -> f32 {
         _ => 0.05,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::Scorer;
+
+    #[test]
+    fn it_awards_no_points_for_empty_term() {
+        let mut scorer = Scorer::new("");
+        assert_eq!(0, scorer.score("hello"));
+    }
+
+    #[test]
+    fn it_awards_no_points_for_empty_input() {
+        let mut scorer = Scorer::new("hello");
+        assert_eq!(0, scorer.score(""));
+    }
+
+    #[test]
+    fn it_awards_no_points_for_term_longer_than_input() {
+        let mut scorer = Scorer::new("hello");
+        assert_eq!(0, scorer.score("hi"));
+    }
+
+    #[test]
+    fn it_awards_more_points_for_exact_match_than_close_match() {
+        let mut scorer = Scorer::new("hello");
+        let a = scorer.score("hello");
+        let b = scorer.score("hellolo");
+        assert!(a > 0);
+        assert!(b > 0);
+        assert!(a > b);
+    }
+
+    #[test]
+    fn it_awards_anchor_points() {
+        let mut scorer = Scorer::new("hello");
+        let a = scorer.score("hel--lo");
+        let b = scorer.score("-hello-");
+        assert!(a > 0);
+        assert!(b > 0);
+        assert!(a > b);
+    }
+}
