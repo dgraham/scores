@@ -43,7 +43,7 @@ fn main() {
 }
 
 fn search(term: &str, limit: Option<usize>) {
-    let scorer = Scorer::new(term);
+    let mut scorer = Scorer::new(term);
 
     let stdin = io::stdin();
     let mut matches: Vec<_> = stdin
