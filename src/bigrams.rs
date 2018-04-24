@@ -7,6 +7,12 @@ impl Bigrams {
         Bigrams { grams: Vec::new() }
     }
 
+    pub fn build(text: &str) -> Self {
+        let mut set = Bigrams::new();
+        set.insert(text);
+        set
+    }
+
     pub fn clear(&mut self) {
         self.grams.clear();
     }
@@ -74,38 +80,24 @@ mod tests {
 
     #[test]
     fn it_awards_no_score_for_short_text() {
-        let mut a = Bigrams::new();
-        a.insert("h");
-
-        let mut b = Bigrams::new();
-        b.insert("hello");
-
+        let a = Bigrams::build("h");
+        let b = Bigrams::build("hello");
         assert_eq!(0.0, a.similarity(&b));
         assert_eq!(0.0, b.similarity(&a));
     }
 
     #[test]
     fn it_awards_full_score_for_identical_text() {
-        let mut a = Bigrams::new();
-        a.insert("hello");
-
-        let mut b = Bigrams::new();
-        b.insert("hello");
-
+        let a = Bigrams::build("hello");
+        let b = Bigrams::build("hello");
         assert_eq!(1.0, a.similarity(&b));
     }
 
     #[test]
     fn it_awards_more_points_for_closer_matches() {
-        let mut a = Bigrams::new();
-        a.insert("he");
-
-        let mut b = Bigrams::new();
-        b.insert("hello");
-
-        let mut c = Bigrams::new();
-        c.insert("helo");
-
+        let a = Bigrams::build("he");
+        let b = Bigrams::build("hello");
+        let c = Bigrams::build("helo");
         assert!(a.similarity(&b) > 0.0);
         assert!(c.similarity(&b) > 0.0);
         assert!(c.similarity(&b) > a.similarity(&b));

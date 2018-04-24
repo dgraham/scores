@@ -9,12 +9,9 @@ pub struct Scorer<'a> {
 
 impl<'a> Scorer<'a> {
     pub fn new(term: &'a str) -> Self {
-        let mut term_bi = Bigrams::new();
-        term_bi.insert(term);
-
         Scorer {
             term,
-            term_bi,
+            term_bi: Bigrams::build(term),
             line_bi: Bigrams::new(),
         }
     }
