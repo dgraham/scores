@@ -1,18 +1,29 @@
-pub fn score(line: &str, term: &str) -> u32 {
-    if term.len() > line.len() {
-        return 0;
+pub struct Scorer<'a> {
+    term: &'a str,
+}
+
+impl<'a> Scorer<'a> {
+    pub fn new(term: &'a str) -> Self {
+        Scorer { term }
     }
 
-    let similarity = dice(line, term);
-    let total = if similarity == 0.0 {
-        0.0
-    } else if similarity == 1.0 {
-        1.0 * 2.0
-    } else {
-        similarity + bonus(prefix(line, term, 5)) + bonus(suffix(line, term, 5))
-    };
+    pub fn score(&self, line: &str) -> u32 {
+        let term = self.term;
+        if term.len() > line.len() {
+            return 0;
+        }
 
-    (total * 10000.0) as u32
+        let similarity = dice(line, term);
+        let total = if similarity == 0.0 {
+            0.0
+        } else if similarity == 1.0 {
+            1.0 * 2.0
+        } else {
+            similarity + bonus(prefix(line, term, 5)) + bonus(suffix(line, term, 5))
+        };
+
+        (total * 10000.0) as u32
+    }
 }
 
 // Returns a string similarity score between 0.0 and 1.0.

@@ -6,7 +6,7 @@ use std::io::{self, BufRead};
 use std::process::exit;
 
 use getopts::Options;
-use scores::score;
+use scores::Scorer;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -43,12 +43,14 @@ fn main() {
 }
 
 fn search(term: &str, limit: Option<usize>) {
+    let scorer = Scorer::new(term);
+
     let stdin = io::stdin();
     let mut matches: Vec<_> = stdin
         .lock()
         .lines()
         .filter_map(|line| {
-            line.ok().and_then(|full| match score(&full, term) {
+            line.ok().and_then(|full| match scorer.score(&full) {
                 0 => None,
                 val => Some((full, val)),
             })
