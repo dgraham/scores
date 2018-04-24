@@ -56,7 +56,7 @@ impl Bigrams {
 
     pub fn insert(&mut self, text: &str) {
         bigrams(text, &mut self.grams);
-        self.grams.sort();
+        self.grams.sort_unstable();
     }
 
     pub fn len(&self) -> usize {
