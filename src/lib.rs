@@ -38,8 +38,11 @@ fn dice(a: &str, b: &str) -> f32 {
         return 0.0;
     }
 
-    let mut bigrams1 = bigrams(a);
-    let mut bigrams2 = bigrams(b);
+    let mut bigrams1 = Vec::new();
+    bigrams(a, &mut bigrams1);
+
+    let mut bigrams2 = Vec::new();
+    bigrams(b, &mut bigrams2);
 
     let card1 = bigrams1.len();
     let card2 = bigrams2.len();
@@ -65,12 +68,15 @@ fn dice(a: &str, b: &str) -> f32 {
     (matches as f32 * 2.0) / (card1 + card2) as f32
 }
 
-fn bigrams(text: &str) -> Vec<u64> {
-    text.chars()
-        .collect::<Vec<_>>()
-        .windows(2)
-        .map(|bi| ((bi[0] as u64) << 32) | bi[1] as u64)
-        .collect()
+fn bigrams(text: &str, container: &mut Vec<u64>) {
+    let mut first = None;
+    for ch in text.chars() {
+        if let Some(hi) = first {
+            let gram = ((hi as u64) << 32) | ch as u64;
+            container.push(gram);
+        }
+        first = Some(ch);
+    }
 }
 
 fn prefix(a: &str, b: &str, limit: usize) -> usize {
