@@ -79,6 +79,28 @@ mod tests {
     use super::Bigrams;
 
     #[test]
+    fn it_is_empty_with_short_input() {
+        let a = Bigrams::build("h");
+        assert!(a.is_empty());
+        assert_eq!(0, a.len());
+    }
+
+    #[test]
+    fn it_is_not_empty_with_at_least_one_bigram() {
+        let a = Bigrams::build("hi");
+        assert!(!a.is_empty());
+        assert_eq!(1, a.len());
+    }
+
+    #[test]
+    fn it_clears_its_bigram_set() {
+        let mut a = Bigrams::build("hi");
+        assert!(!a.is_empty());
+        a.clear();
+        assert!(a.is_empty());
+    }
+
+    #[test]
     fn it_awards_no_score_for_short_text() {
         let a = Bigrams::build("h");
         let b = Bigrams::build("hello");
@@ -101,5 +123,12 @@ mod tests {
         assert!(a.similarity(&b) > 0.0);
         assert!(c.similarity(&b) > 0.0);
         assert!(c.similarity(&b) > a.similarity(&b));
+    }
+
+    #[test]
+    fn it_considers_duplicate_bigrams() {
+        let a = Bigrams::build("aaaa");
+        let b = Bigrams::build("aa");
+        assert!(a.similarity(&b) < 1.0);
     }
 }
