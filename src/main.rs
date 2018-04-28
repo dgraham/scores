@@ -12,12 +12,9 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     let mut opts = Options::new();
-    opts.optflag("h", "help", "Print this message").optopt(
-        "l",
-        "limit",
-        "Maximum number of results",
-        "MAX",
-    );
+    opts.optflag("h", "help", "Display this message")
+        .optopt("l", "limit", "Maximum number of results", "MAX")
+        .optopt("E", "exclude", "Exclude the specified entry", "NAME");
 
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
@@ -39,21 +36,24 @@ fn main() {
     };
 
     let limit: Option<usize> = matches.opt_str("l").and_then(|max| max.parse().ok());
-    search(&term, limit);
+    search(&term, limit, matches.opt_str("E"));
 }
 
-fn search(term: &str, limit: Option<usize>) {
+fn search(term: &str, limit: Option<usize>, exclude: Option<String>) {
     let mut scorer = Scorer::new(term);
 
     let stdin = io::stdin();
     let mut matches: Vec<_> = stdin
         .lock()
         .lines()
-        .filter_map(|line| {
-            line.ok().and_then(|full| match scorer.score(&full) {
-                0 => None,
-                val => Some((full, val)),
-            })
+        .filter_map(|line| line.ok())
+        .filter(|line| match exclude {
+            Some(ref exclude) => line != exclude,
+            None => true,
+        })
+        .filter_map(|line| match scorer.score(&line) {
+            0 => None,
+            val => Some((line, val)),
         })
         .collect();
 
