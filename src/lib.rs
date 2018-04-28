@@ -24,6 +24,14 @@ impl<'a> Scorer<'a> {
 
         let total = if term == line {
             1.0 * 2.0
+        } else if term.len() == 1 {
+            if line.starts_with(term) {
+                0.2
+            } else if line.contains(term) {
+                0.1
+            } else {
+                0.0
+            }
         } else {
             self.line_bi.clear();
             self.line_bi.insert(line);
