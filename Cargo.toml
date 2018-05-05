@@ -5,3 +5,4 @@ authors = ["David Graham <david.malcom.graham@gmail.com>"]
 
 [dependencies]
 getopts = "0.2.17"
+regex = "1.0.0"

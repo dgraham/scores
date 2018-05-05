@@ -1,7 +1,11 @@
+extern crate regex;
+use regex::{escape, Regex, RegexBuilder};
+
 mod bigrams;
 use bigrams::Bigrams;
 
 pub struct Scorer<'a> {
+    re: Option<Regex>,
     term: &'a str,
     term_bi: Bigrams,
     line_bi: Bigrams,
@@ -10,76 +14,53 @@ pub struct Scorer<'a> {
 impl<'a> Scorer<'a> {
     pub fn new(term: &'a str) -> Self {
         Scorer {
+            re: pattern(term),
             term,
             term_bi: Bigrams::build(term),
             line_bi: Bigrams::new(),
         }
     }
 
-    pub fn score(&mut self, line: &str) -> u32 {
-        let term = self.term;
-        if term.len() > line.len() {
+    pub fn score(&self, line: &str) -> u32 {
+        if self.term.len() > line.len() {
             return 0;
         }
 
-        let total = if term == line {
-            1.0 * 2.0
-        } else if term.len() == 1 {
-            if line.starts_with(term) {
-                0.2
-            } else if line.contains(term) {
-                0.1
-            } else {
-                0.0
+        self.re.as_ref().map_or(0, |re| {
+            re.find(line).map_or(0, |m| {
+                let range = m.end() - m.start() + 1;
+                let penalty = ((line.len() as f32) + 1.0) / 100.0;
+                let score = 1.0 / ((range as f32) + penalty);
+                (score * 100_000.0) as u32
+            })
+        })
+    }
+}
+
+fn pattern(term: &str) -> Option<Regex> {
+    let mut term = String::from(term);
+    term.pop().map_or(None, |last| {
+        let mut insensitive = last.is_lowercase();
+
+        let mut pattern = String::new();
+        for ch in term.chars() {
+            let esc = escape(&ch.to_string());
+            pattern.push_str(&esc);
+            pattern.push_str("[^");
+            pattern.push_str(&esc);
+            pattern.push_str("]*");
+
+            if ch.is_uppercase() {
+                insensitive = false;
             }
-        } else {
-            self.line_bi.clear();
-            self.line_bi.insert(line);
-            let similarity = self.term_bi.similarity(&self.line_bi);
-            if similarity == 0.0 {
-                0.0
-            } else if similarity == 1.0 {
-                1.0 * 2.0
-            } else {
-                similarity + bonus(prefix(line, term, 5)) + bonus(suffix(line, term, 5))
-            }
-        };
+        }
+        pattern.push(last);
 
-        (total * 10000.0) as u32
-    }
-}
-
-fn prefix(a: &str, b: &str, limit: usize) -> usize {
-    let stop = a.chars()
-        .zip(b.chars())
-        .enumerate()
-        .take(limit)
-        .find(|&(_, (x, y))| x != y);
-    match stop {
-        Some((ix, _)) => ix,
-        None => limit,
-    }
-}
-
-fn suffix(a: &str, b: &str, limit: usize) -> usize {
-    let stop = a.chars()
-        .rev()
-        .zip(b.chars().rev())
-        .enumerate()
-        .take(limit)
-        .find(|&(_, (x, y))| x != y);
-    match stop {
-        Some((ix, _)) => ix,
-        None => limit,
-    }
-}
-
-fn bonus(shared: usize) -> f32 {
-    match shared {
-        0 => 0.0,
-        len if len >= 2 => 0.2,
-        _ => 0.05,
-    }
+        RegexBuilder::new(&pattern)
+            .case_insensitive(insensitive)
+            .build()
+            .ok()
+    })
 }
 
 #[cfg(test)]
@@ -115,12 +96,40 @@ mod tests {
     }
 
     #[test]
-    fn it_awards_anchor_points() {
+    fn it_awards_more_points_for_shorter_match_range() {
         let mut scorer = Scorer::new("hello");
-        let a = scorer.score("hel--lo");
-        let b = scorer.score("-hello-");
+        let a = scorer.score("-hel-lo");
+        let b = scorer.score("hel--lo");
         assert!(a > 0);
         assert!(b > 0);
         assert!(a > b);
+    }
+
+    #[test]
+    fn it_awards_more_points_for_shorter_input() {
+        let mut scorer = Scorer::new("hello");
+        let a = scorer.score("-hello");
+        let b = scorer.score("--hello");
+        assert!(a > 0);
+        assert!(b > 0);
+        assert!(a > b);
+    }
+
+    #[test]
+    fn it_matches_case_insensitively() {
+        let mut scorer = Scorer::new("hello");
+        let a = scorer.score("Hello");
+        let b = scorer.score("hello");
+        assert!(a > 0);
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn it_matches_case_sensitively() {
+        let mut scorer = Scorer::new("Hello");
+        let a = scorer.score("Hello");
+        let b = scorer.score("hello");
+        assert!(a > 0);
+        assert_eq!(0, b);
     }
 }
