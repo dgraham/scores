@@ -50,7 +50,8 @@ impl<'a> Scorer<'a> {
 }
 
 fn prefix(a: &str, b: &str, limit: usize) -> usize {
-    let stop = a.chars()
+    let stop = a
+        .chars()
         .zip(b.chars())
         .enumerate()
         .take(limit)
@@ -62,7 +63,8 @@ fn prefix(a: &str, b: &str, limit: usize) -> usize {
 }
 
 fn suffix(a: &str, b: &str, limit: usize) -> usize {
-    let stop = a.chars()
+    let stop = a
+        .chars()
         .rev()
         .zip(b.chars().rev())
         .enumerate()
