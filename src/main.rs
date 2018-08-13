@@ -6,7 +6,7 @@ use std::io::{self, BufRead};
 use std::process::exit;
 
 use getopts::Options;
-use scores::Scorer;
+use scores::{Anchor, Scorer};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -14,7 +14,8 @@ fn main() {
     let mut opts = Options::new();
     opts.optflag("h", "help", "Display this message")
         .optopt("l", "limit", "Maximum number of results", "MAX")
-        .optopt("E", "exclude", "Exclude the specified entry", "NAME");
+        .optopt("E", "exclude", "Exclude the specified entry", "NAME")
+        .optopt("r", "reference", "A reference to match against", "NAME");
 
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
@@ -36,28 +37,23 @@ fn main() {
     };
 
     let limit: Option<usize> = matches.opt_str("l").and_then(|max| max.parse().ok());
-    search(&term, limit, matches.opt_str("E"));
+    search(&term, limit, matches.opt_str("E"), matches.opt_str("r"));
 }
 
-fn search(term: &str, limit: Option<usize>, exclude: Option<String>) {
-    let mut scorer = Scorer::new(term);
+fn search(term: &str, limit: Option<usize>, exclude: Option<String>, reference: Option<String>) {
+    let mut scorer = Scorer::new(term, reference.map(|a| Anchor::new(&a)));
 
     let stdin = io::stdin();
-    let mut matches: Vec<_> = stdin
+    let lines = stdin
         .lock()
         .lines()
         .filter_map(|line| line.ok())
         .filter(|line| match exclude {
             Some(ref exclude) => line != exclude,
             None => true,
-        })
-        .filter_map(|line| match scorer.score(&line) {
-            0 => None,
-            val => Some((line, val)),
-        })
-        .collect();
+        });
 
-    matches.sort_by(|a, b| b.1.cmp(&a.1));
+    let matches = scorer.rank(lines);
 
     let top = match limit {
         Some(max) if max < matches.len() => &matches[..max],
