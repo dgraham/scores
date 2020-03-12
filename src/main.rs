@@ -1,6 +1,3 @@
-extern crate getopts;
-extern crate scores;
-
 use std::env;
 use std::io::{self, BufRead};
 use std::process::exit;

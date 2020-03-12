@@ -1,4 +1,4 @@
-use bigrams::Bigrams;
+use crate::bigrams::Bigrams;
 
 pub struct Anchor {
     anchor: Bigrams,

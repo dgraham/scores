@@ -1,4 +1,3 @@
-extern crate regex;
 use regex::{escape, Regex, RegexBuilder};
 
 mod anchor;
