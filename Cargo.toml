@@ -5,7 +5,7 @@ authors = ["David Graham <david.malcom.graham@gmail.com>"]
 description = "String similarity ranking for Vim's CtrlP fuzzy file finder."
 repository = "https://github.com/dgraham/scores"
 license = "MIT"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 getopts = "0.2.21"
