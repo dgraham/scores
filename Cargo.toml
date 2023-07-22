@@ -9,4 +9,4 @@ edition = "2021"
 
 [dependencies]
 getopts = "0.2.21"
-regex = "1.5.4"
+regex = "1.9.1"
