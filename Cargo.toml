@@ -10,3 +10,7 @@ edition = "2021"
 [dependencies]
 getopts = "0.2.21"
 regex = "1.11.1"
+
+[profile.release]
+strip = true
+panic = "abort"
