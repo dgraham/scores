@@ -1,4 +1,4 @@
-use regex::{escape, Regex, RegexBuilder};
+use regex::{Regex, RegexBuilder, escape};
 
 mod anchor;
 mod bigrams;
