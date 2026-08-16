@@ -36,7 +36,18 @@ fn run() -> Result<(), Box<dyn Error>> {
         None => return Ok(()),
     };
 
-    let limit: Option<usize> = matches.opt_str("limit").and_then(|max| max.parse().ok());
+    let limit = matches
+        .opt_str("limit")
+        .map(|value| {
+            value.parse::<usize>().map_err(|_| {
+                io::Error::new(
+                    ErrorKind::InvalidInput,
+                    format!("Invalid --limit value: {value}"),
+                )
+            })
+        })
+        .transpose()?;
+
     search(
         term,
         limit,
