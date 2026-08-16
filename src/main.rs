@@ -45,7 +45,7 @@ fn run() -> Result<(), Box<dyn Error>> {
 
     let limit: Option<usize> = matches.opt_str("limit").and_then(|max| max.parse().ok());
     search(
-        &term,
+        term,
         limit,
         matches.opt_str("exclude"),
         matches.opt_str("reference"),
@@ -60,7 +60,7 @@ fn search(term: &str, limit: Option<usize>, exclude: Option<String>, reference: 
     let lines = stdin
         .lock()
         .lines()
-        .filter_map(|line| line.ok())
+        .map_while(Result::ok)
         .filter(|line| match exclude {
             Some(ref exclude) => line != exclude,
             None => true,
@@ -73,7 +73,7 @@ fn search(term: &str, limit: Option<usize>, exclude: Option<String>, reference: 
         _ => &matches,
     };
 
-    for &(ref text, _) in top {
+    for (text, _) in top {
         println!("{}", text);
     }
 }

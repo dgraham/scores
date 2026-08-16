@@ -41,14 +41,14 @@ impl<'a> Scorer<'a> {
 
         let anchor = &mut self.anchor;
         self.re.as_ref().and_then(|re| {
-            re.find(line).and_then(|m| {
+            re.find(line).map(|m| {
                 let range = m.end() - m.start() + 1;
                 let penalty = ((line.len() as f32) + 1.0) / 100.0;
                 let score = 1.0 / ((range as f32) + penalty);
-                Some(Score {
+                Score {
                     regex: score,
                     similarity: anchor.as_mut().map_or(0.0, |a| a.score(line)),
-                })
+                }
             })
         })
     }
@@ -82,7 +82,7 @@ impl<'a> Scorer<'a> {
 
 fn pattern(term: &str) -> Option<Regex> {
     let mut term = String::from(term);
-    term.pop().map_or(None, |last| {
+    term.pop().and_then(|last| {
         let mut insensitive = last.is_lowercase();
 
         let mut pattern = String::new();
