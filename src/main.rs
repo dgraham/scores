@@ -1,6 +1,6 @@
 use std::env;
 use std::error::Error;
-use std::io::{self, BufRead};
+use std::io::{self, BufRead, ErrorKind};
 use std::process::ExitCode;
 
 use getopts::Options;
@@ -17,15 +17,8 @@ fn main() -> ExitCode {
 }
 
 fn run() -> Result<(), Box<dyn Error>> {
-    let args: Vec<String> = env::args().collect();
-
-    let mut opts = Options::new();
-    opts.optflag("h", "help", "Print this help message")
-        .optflag("V", "version", "Print version information")
-        .optopt("l", "limit", "Maximum number of results", "MAX")
-        .optopt("E", "exclude", "Exclude the specified entry", "NAME")
-        .optopt("r", "reference", "A reference to match against", "NAME");
-
+    let args = args()?;
+    let opts = opts();
     let matches = opts.parse(&args[1..])?;
 
     if matches.opt_present("help") {
@@ -51,6 +44,29 @@ fn run() -> Result<(), Box<dyn Error>> {
         matches.opt_str("reference"),
     );
     Ok(())
+}
+
+fn opts() -> Options {
+    let mut opts = Options::new();
+    opts.optflag("h", "help", "Print this help message");
+    opts.optflag("V", "version", "Print version information");
+    opts.optopt("l", "limit", "Maximum number of results", "MAX");
+    opts.optopt("E", "exclude", "Exclude the specified entry", "NAME");
+    opts.optopt("r", "reference", "A reference to match against", "NAME");
+    opts
+}
+
+fn args() -> Result<Vec<String>, io::Error> {
+    env::args_os()
+        .map(|arg| {
+            arg.into_string().map_err(|arg| {
+                io::Error::new(
+                    ErrorKind::InvalidInput,
+                    format!("Invalid UTF-8 argument: {}", arg.to_string_lossy()),
+                )
+            })
+        })
+        .collect()
 }
 
 fn search(term: &str, limit: Option<usize>, exclude: Option<String>, reference: Option<String>) {
