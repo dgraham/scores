@@ -1,40 +1,51 @@
 use std::env;
+use std::error::Error;
 use std::io::{self, BufRead};
-use std::process::exit;
+use std::process::ExitCode;
 
 use getopts::Options;
 use scores::{Anchor, Scorer};
 
-fn main() {
+fn main() -> ExitCode {
+    match run() {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(error) => {
+            eprintln!("{}", error);
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn run() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().collect();
 
     let mut opts = Options::new();
-    opts.optflag("h", "help", "Display this message")
+    opts.optflag("h", "help", "Print this help message")
+        .optflag("V", "version", "Print version information")
         .optopt("l", "limit", "Maximum number of results", "MAX")
         .optopt("E", "exclude", "Exclude the specified entry", "NAME")
         .optopt("r", "reference", "A reference to match against", "NAME");
 
-    let matches = match opts.parse(&args[1..]) {
-        Ok(m) => m,
-        Err(e) => {
-            usage(&opts);
-            println!("{}", e);
-            exit(1);
-        }
-    };
+    let matches = opts.parse(&args[1..])?;
 
     if matches.opt_present("h") {
         usage(&opts);
-        exit(0);
+        return Ok(());
+    }
+
+    if matches.opt_present("V") {
+        println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
+        return Ok(());
     }
 
     let term = match matches.free.first() {
         Some(free) => free,
-        None => exit(0),
+        None => return Ok(()),
     };
 
     let limit: Option<usize> = matches.opt_str("l").and_then(|max| max.parse().ok());
     search(&term, limit, matches.opt_str("E"), matches.opt_str("r"));
+    Ok(())
 }
 
 fn search(term: &str, limit: Option<usize>, exclude: Option<String>, reference: Option<String>) {
