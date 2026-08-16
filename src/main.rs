@@ -28,12 +28,12 @@ fn run() -> Result<(), Box<dyn Error>> {
 
     let matches = opts.parse(&args[1..])?;
 
-    if matches.opt_present("h") {
+    if matches.opt_present("help") {
         usage(&opts);
         return Ok(());
     }
 
-    if matches.opt_present("V") {
+    if matches.opt_present("version") {
         println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
         return Ok(());
     }
@@ -43,8 +43,13 @@ fn run() -> Result<(), Box<dyn Error>> {
         None => return Ok(()),
     };
 
-    let limit: Option<usize> = matches.opt_str("l").and_then(|max| max.parse().ok());
-    search(&term, limit, matches.opt_str("E"), matches.opt_str("r"));
+    let limit: Option<usize> = matches.opt_str("limit").and_then(|max| max.parse().ok());
+    search(
+        &term,
+        limit,
+        matches.opt_str("exclude"),
+        matches.opt_str("reference"),
+    );
     Ok(())
 }
 
