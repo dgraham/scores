@@ -13,6 +13,7 @@ pub struct Scorer<'a> {
 
 #[derive(Debug)]
 pub struct Score {
+    pub line: String,
     pub regex: f32,
     pub similarity: f32,
 }
@@ -34,34 +35,38 @@ impl<'a> Scorer<'a> {
         }
     }
 
-    fn score(&mut self, line: &str) -> Option<Score> {
+    fn score(&mut self, line: impl Into<String>) -> Option<Score> {
+        let line = line.into();
+
         if self.term.len() > line.len() {
             return None;
         }
 
-        let anchor = &mut self.anchor;
-        self.re.as_ref().and_then(|re| {
-            re.find(line).map(|m| {
-                let range = m.end() - m.start() + 1;
-                let penalty = ((line.len() as f32) + 1.0) / 100.0;
-                let score = 1.0 / ((range as f32) + penalty);
-                Score {
-                    regex: score,
-                    similarity: anchor.as_mut().map_or(0.0, |a| a.score(line)),
-                }
-            })
+        let range = self
+            .re
+            .as_ref()?
+            .find(&line)
+            .map(|m| m.end() - m.start() + 1)?;
+        let penalty = ((line.len() as f32) + 1.0) / 100.0;
+        let similarity = self.anchor.as_mut().map_or(0.0, |a| a.score(&line));
+
+        Some(Score {
+            line,
+            regex: 1.0 / ((range as f32) + penalty),
+            similarity,
         })
     }
 
-    pub fn rank<I>(&mut self, lines: I) -> Vec<(String, Score)>
+    pub fn rank<I, T>(&mut self, lines: I) -> Vec<Score>
     where
-        I: Iterator<Item = String>,
+        I: Iterator<Item = T>,
+        T: Into<String>,
     {
         let mut min = 0.0;
         let mut max = 0.0;
 
         let mut matches: Vec<_> = lines
-            .filter_map(|line| match self.score(&line) {
+            .filter_map(|line| match self.score(line.into()) {
                 None => None,
                 Some(val) => {
                     if val.regex < min {
@@ -70,12 +75,12 @@ impl<'a> Scorer<'a> {
                     if val.regex > max {
                         max = val.regex;
                     }
-                    Some((line, val))
+                    Some(val)
                 }
             })
             .collect();
 
-        matches.sort_by(|a, b| a.1.value(min, max).cmp(&b.1.value(min, max)).reverse());
+        matches.sort_by(|a, b| a.value(min, max).cmp(&b.value(min, max)).reverse());
         matches
     }
 }
@@ -175,5 +180,15 @@ mod tests {
         assert!(a.is_some());
         assert!(b.is_none());
         assert!(a.unwrap().regex > 0.0);
+    }
+
+    #[test]
+    fn it_ranks_borrowed_lines() {
+        let lines = ["hellolo", "hello"];
+        let mut scorer = Scorer::new("hello", None);
+        let matches = scorer.rank(lines.into_iter());
+
+        assert_eq!(matches[0].line, "hello");
+        assert_eq!(matches[1].line, "hellolo");
     }
 }

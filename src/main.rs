@@ -100,8 +100,8 @@ fn search(term: &str, limit: Option<usize>, exclude: Option<String>, reference: 
         _ => &matches,
     };
 
-    for (text, _) in top {
-        println!("{}", text);
+    for score in top {
+        println!("{}", score.line);
     }
 }
 
