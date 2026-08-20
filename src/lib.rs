@@ -19,10 +19,8 @@ pub struct Score {
 }
 
 impl Score {
-    pub fn value(&self, min: f32, max: f32) -> u32 {
-        let regex = (self.regex - min) / (max - min);
-        let weighted = regex * 0.9 + self.similarity * 0.1;
-        (weighted * 100_000.0) as u32
+    pub fn value(&self) -> f32 {
+        self.regex * 0.9 + self.similarity * 0.1
     }
 }
 
@@ -42,17 +40,16 @@ impl<'a> Scorer<'a> {
             return None;
         }
 
-        let range = self
-            .re
-            .as_ref()?
-            .find(&line)
-            .map(|m| m.end() - m.start() + 1)?;
+        let range = self.re.as_ref()?.find(&line).map(|m| m.end() - m.start())?;
         let penalty = ((line.len() as f32) + 1.0) / 100.0;
+        let ideal = (self.term.len() as f32) + ((self.term.len() as f32) + 1.0) / 100.0;
+        let regex = ideal / ((range as f32) + penalty);
+
         let similarity = self.anchor.as_mut().map_or(0.0, |a| a.score(&line));
 
         Some(Score {
             line,
-            regex: 1.0 / ((range as f32) + penalty),
+            regex,
             similarity,
         })
     }
@@ -62,25 +59,8 @@ impl<'a> Scorer<'a> {
         I: Iterator<Item = T>,
         T: Into<String>,
     {
-        let mut min = 0.0;
-        let mut max = 0.0;
-
-        let mut matches: Vec<_> = lines
-            .filter_map(|line| match self.score(line.into()) {
-                None => None,
-                Some(val) => {
-                    if val.regex < min {
-                        min = val.regex;
-                    }
-                    if val.regex > max {
-                        max = val.regex;
-                    }
-                    Some(val)
-                }
-            })
-            .collect();
-
-        matches.sort_by(|a, b| a.value(min, max).cmp(&b.value(min, max)).reverse());
+        let mut matches: Vec<_> = lines.filter_map(|line| self.score(line)).collect();
+        matches.sort_by(|a, b| b.value().total_cmp(&a.value()));
         matches
     }
 }
@@ -141,6 +121,14 @@ mod tests {
         assert!(a.regex > 0.0);
         assert!(b.regex > 0.0);
         assert!(a.regex > b.regex);
+    }
+
+    #[test]
+    fn it_awards_full_regex_score_for_exact_match() {
+        let mut scorer = Scorer::new("hello", None);
+        let score = scorer.score("hello").unwrap();
+
+        assert_eq!(score.regex, 1.0);
     }
 
     #[test]
