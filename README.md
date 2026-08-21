@@ -12,8 +12,22 @@ Install the [vim-scores][] plugin to use this as CtrlP's file name matcher.
 ## Usage
 
 ```
-$ scores -h
 $ scores --limit 10 user.rb < items.cache
+```
+
+```
+$ scores -h
+String similarity scoring
+
+Usage:
+    scores term [options]
+
+Options:
+    -h, --help           Print this help message
+    -V, --version        Print version information
+    -l, --limit MAX      Maximum number of results
+    -E, --exclude NAME   Exclude the specified entry
+    -r, --reference NAME A reference to match against
 ```
 
 ## Development
