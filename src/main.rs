@@ -81,7 +81,7 @@ fn args() -> Result<Vec<String>, io::Error> {
 }
 
 fn search(term: &str, limit: Option<usize>, exclude: Option<String>, reference: Option<String>) {
-    let mut scorer = Scorer::new(term, reference.map(|a| Anchor::new(&a)));
+    let mut scorer = Scorer::new(term, reference.map(|a| Anchor::new(&a)), limit);
 
     let stdin = io::stdin();
     let lines = stdin
@@ -95,12 +95,7 @@ fn search(term: &str, limit: Option<usize>, exclude: Option<String>, reference: 
 
     let matches = scorer.rank(lines);
 
-    let top = match limit {
-        Some(max) if max < matches.len() => &matches[..max],
-        _ => &matches,
-    };
-
-    for score in top {
+    for score in matches {
         println!("{}", score.line);
     }
 }
