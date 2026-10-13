@@ -12,5 +12,7 @@ getopts = "0.2.24"
 regex = "1.13.1"
 
 [profile.release]
-strip = true
+codegen-units = 1
+lto = true
 panic = "abort"
+strip = true
