@@ -1,6 +1,6 @@
 [package]
 name = "scores"
-version = "1.0.0"
+version = "1.0.1"
 authors = ["David Graham <david.malcom.graham@gmail.com>"]
 description = "String similarity ranking for Vim's CtrlP fuzzy file finder."
 repository = "https://github.com/dgraham/scores"
