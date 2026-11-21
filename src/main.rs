@@ -1,14 +1,21 @@
 use std::env;
 use std::error::Error;
-use std::io::{self, BufRead, ErrorKind};
+use std::io::{self, BufRead, ErrorKind, Write};
 use std::process::ExitCode;
 
 use getopts::Options;
-use scores::{Anchor, Scorer};
+use scores::{Anchor, Score, Scorer};
 
 fn main() -> ExitCode {
     match run() {
         Ok(()) => ExitCode::SUCCESS,
+        Err(error)
+            if error
+                .downcast_ref::<io::Error>()
+                .is_some_and(|error| error.kind() == ErrorKind::BrokenPipe) =>
+        {
+            ExitCode::SUCCESS
+        }
         Err(error) => {
             eprintln!("{}", error);
             ExitCode::FAILURE
@@ -48,12 +55,16 @@ fn run() -> Result<(), Box<dyn Error>> {
         None => return Ok(()),
     };
 
-    search(
-        term,
-        limit,
-        matches.opt_str("exclude"),
-        matches.opt_str("reference"),
-    );
+    let exclude = matches.opt_str("exclude");
+    let reference = matches.opt_str("reference");
+    let matches = search(term, limit, exclude, reference);
+
+    let stdout = io::stdout();
+    let mut output = stdout.lock();
+    for score in matches {
+        writeln!(output, "{}", score.line)?;
+    }
+
     Ok(())
 }
 
@@ -80,7 +91,12 @@ fn args() -> Result<Vec<String>, io::Error> {
         .collect()
 }
 
-fn search(term: &str, limit: Option<usize>, exclude: Option<String>, reference: Option<String>) {
+fn search(
+    term: &str,
+    limit: Option<usize>,
+    exclude: Option<String>,
+    reference: Option<String>,
+) -> Vec<Score> {
     let mut scorer = Scorer::new(term, reference.map(|a| Anchor::new(&a)), limit);
 
     let stdin = io::stdin();
@@ -93,11 +109,7 @@ fn search(term: &str, limit: Option<usize>, exclude: Option<String>, reference: 
             None => true,
         });
 
-    let matches = scorer.rank(lines);
-
-    for score in matches {
-        println!("{}", score.line);
-    }
+    scorer.rank(lines)
 }
 
 fn usage(opts: &Options) {
