@@ -31,11 +31,6 @@ fn run() -> Result<(), Box<dyn Error>> {
         return Ok(());
     }
 
-    let term = match matches.free.first() {
-        Some(free) => free,
-        None => return Ok(()),
-    };
-
     let limit = matches
         .opt_str("limit")
         .map(|value| {
@@ -47,6 +42,11 @@ fn run() -> Result<(), Box<dyn Error>> {
             })
         })
         .transpose()?;
+
+    let term = match matches.free.first() {
+        Some(free) => free,
+        None => return Ok(()),
+    };
 
     search(
         term,
